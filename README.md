@@ -1,6 +1,6 @@
 # Ship
 
-Layanan pelacakan paket. Backend Go untuk belajar REST, konkurensi, dan observability, dengan satu binary tanpa runtime tambahan.
+Layanan pelacakan paket. Backend Go untuk REST, konkurensi, dan observability, dengan satu binary tanpa runtime tambahan.
 
 ## Tech stack
 
