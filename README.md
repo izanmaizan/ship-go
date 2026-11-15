@@ -45,11 +45,17 @@ docker run --rm -p 8081:8081 ship-go
 ```
 main.go        entrypoint, router, halaman, handler API
 store.go       penyimpanan paket dan riwayat di memori
+dummy.go      data contoh (SHP1001-SHP1003), aktif secara default
+page.go       halaman lacak (HTML, daisyUI)
 main_test.go   uji alur buat, scan, lacak
 Dockerfile     build multi-stage, runtime distroless nonroot
 go.mod         modul github.com/izanmaizan/ship-go
 ```
 
+## Data dummy
+
+Saat start, tiga resi contoh sudah terisi: `SHP1001`, `SHP1002`, `SHP1003`. Matikan dengan `DUMMY=0`.
+
 ## Status
 
-API jalan: `POST /api/paket`, `POST /api/paket/{resi}/scan`, `GET /api/paket/{resi}`. Penyimpanan masih di memori, belum ada database, antrean, atau metrik.
+API jalan: `GET /api/paket` (daftar), `POST /api/paket`, `POST /api/paket/{resi}/scan`, `GET /api/paket/{resi}`. Penyimpanan masih di memori, belum ada database, antrean, atau metrik.

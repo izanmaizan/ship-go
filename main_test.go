@@ -39,3 +39,36 @@ func TestAlurLacak(t *testing.T) {
 		t.Fatalf("riwayat salah: %+v", p.Riwayat)
 	}
 }
+
+func TestDataDummy(t *testing.T) {
+	store := NewStore()
+	SeedDummy(store)
+	h := newMux(store)
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest("GET", "/api/paket", nil))
+	var daftar []Ringkas
+	if err := json.Unmarshal(rec.Body.Bytes(), &daftar); err != nil {
+		t.Fatal(err)
+	}
+	if len(daftar) != 3 || daftar[0].Resi != "SHP1001" || daftar[2].Status != "Diterima penerima" {
+		t.Fatalf("daftar dummy salah: %+v", daftar)
+	}
+
+	p, err := store.Lacak("SHP1001")
+	if err != nil || len(p.Riwayat) != 5 {
+		t.Fatalf("SHP1001 salah: %v %+v", err, p)
+	}
+
+	if _, err := store.Buat("SHP1001", "x"); err != ErrSudahAda {
+		t.Fatalf("dummy harus bentrok dengan resi sama: %v", err)
+	}
+}
+
+func TestDaftarKosong(t *testing.T) {
+	rec := httptest.NewRecorder()
+	newMux(NewStore()).ServeHTTP(rec, httptest.NewRequest("GET", "/api/paket", nil))
+	if rec.Body.String() != "[]\n" {
+		t.Fatalf("daftar kosong harus [], dapat %q", rec.Body.String())
+	}
+}
