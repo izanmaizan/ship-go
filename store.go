@@ -1,0 +1,72 @@
+package main
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+var (
+	ErrSudahAda    = errors.New("resi sudah ada")
+	ErrTidakKetemu = errors.New("resi tidak ditemukan")
+)
+
+type Langkah struct {
+	Status string    `json:"status"`
+	Lokasi string    `json:"lokasi"`
+	Waktu  time.Time `json:"waktu"`
+}
+
+type Paket struct {
+	Resi    string    `json:"resi"`
+	Tujuan  string    `json:"tujuan"`
+	Riwayat []Langkah `json:"riwayat"`
+}
+
+type Store struct {
+	mu    sync.RWMutex
+	paket map[string]*Paket
+}
+
+func NewStore() *Store {
+	return &Store{paket: map[string]*Paket{}}
+}
+
+func (s *Store) Buat(resi, tujuan string) (Paket, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ada := s.paket[resi]; ada {
+		return Paket{}, ErrSudahAda
+	}
+	p := &Paket{Resi: resi, Tujuan: tujuan, Riwayat: []Langkah{}}
+	s.paket[resi] = p
+	return salin(p), nil
+}
+
+func (s *Store) Catat(resi string, langkah Langkah) (Paket, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p, ada := s.paket[resi]
+	if !ada {
+		return Paket{}, ErrTidakKetemu
+	}
+	langkah.Waktu = time.Now().UTC()
+	p.Riwayat = append(p.Riwayat, langkah)
+	return salin(p), nil
+}
+
+func (s *Store) Lacak(resi string) (Paket, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	p, ada := s.paket[resi]
+	if !ada {
+		return Paket{}, ErrTidakKetemu
+	}
+	return salin(p), nil
+}
+
+func salin(p *Paket) Paket {
+	out := *p
+	out.Riwayat = append([]Langkah{}, p.Riwayat...)
+	return out
+}

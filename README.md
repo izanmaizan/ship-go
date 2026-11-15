@@ -30,15 +30,26 @@ Server di `http://localhost:8081`, health check di `/health`.
 ```bash
 go build -o ship .
 go vet ./...
+go test ./...
+```
+
+Docker:
+
+```bash
+docker build -t ship-go .
+docker run --rm -p 8081:8081 ship-go
 ```
 
 ## Struktur
 
 ```
-main.go        entrypoint, router, halaman
+main.go        entrypoint, router, halaman, handler API
+store.go       penyimpanan paket dan riwayat di memori
+main_test.go   uji alur buat, scan, lacak
+Dockerfile     build multi-stage, runtime distroless nonroot
 go.mod         modul github.com/izanmaizan/ship-go
 ```
 
 ## Status
 
-Scaffold. Endpoint `/health` dan halaman lacak sudah jalan. Belum ada database, cache, antrean, atau metrik.
+API jalan: `POST /api/paket`, `POST /api/paket/{resi}/scan`, `GET /api/paket/{resi}`. Penyimpanan masih di memori, belum ada database, antrean, atau metrik.
