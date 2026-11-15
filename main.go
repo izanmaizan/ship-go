@@ -119,21 +119,30 @@ func writeError(w http.ResponseWriter, code int, msg string) {
 }
 
 const indexHTML = `<!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="id" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Ship - Lacak Paket</title>
-<style>
-*{box-sizing:border-box;margin:0}body{font-family:ui-sans-serif,system-ui;background:#08090c;color:#e6e8ef;min-height:100vh;display:grid;place-items:center;padding:24px 0}
-.card{width:min(560px,92vw);background:linear-gradient(160deg,#11131a,#0b0c10);border:1px solid #1d2130;border-radius:20px;padding:32px}
-h1{font-size:22px;letter-spacing:-.02em}p{color:#8b93a7;font-size:14px;margin-top:8px}
-form{margin-top:24px;display:flex;gap:8px}input{flex:1;background:#0d0f15;border:1px solid #232838;color:#e6e8ef;padding:12px 14px;border-radius:12px;font-size:14px}
-button{background:#3b82f6;border:0;color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;cursor:pointer}
-ol{list-style:none;margin-top:24px;border-left:1px solid #232838;padding-left:16px}li{padding:8px 0;font-size:14px}li small{display:block;color:#8b93a7}
-.err{color:#f87171;margin-top:16px;font-size:14px}
-</style></head><body><div class="card"><h1>Ship</h1><p>Lacak paket dengan nomor resi.</p>
-<form id="lacak"><input id="resi" placeholder="Nomor resi" aria-label="Nomor resi" maxlength="50" required><button>Lacak</button></form>
-<div id="hasil"></div></div>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head><body class="min-h-screen bg-base-200 flex justify-center p-6">
+<main class="card bg-base-100 shadow w-full max-w-lg mt-12"><div class="card-body">
+<h1 class="card-title text-2xl">Ship</h1>
+<p class="text-sm text-base-content/70">Lacak paket dengan nomor resi.</p>
+<form id="lacak" class="join w-full mt-4"><input id="resi" class="input join-item w-full" placeholder="Nomor resi" aria-label="Nomor resi" maxlength="50" required><button class="btn btn-primary join-item">Lacak</button></form>
+<div id="hasil" class="mt-6"></div>
+</div></main>
 <script>
 const hasil = document.getElementById("hasil");
+function el(tag, cls, teks) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (teks) node.textContent = teks;
+  return node;
+}
+function tampilkanError(pesan) {
+  const box = el("div", "alert alert-error alert-soft", pesan);
+  box.setAttribute("role", "alert");
+  hasil.append(box);
+}
 document.getElementById("lacak").addEventListener("submit", async (e) => {
   e.preventDefault();
   hasil.replaceChildren();
@@ -141,27 +150,27 @@ document.getElementById("lacak").addEventListener("submit", async (e) => {
   const res = await fetch("/api/paket/" + encodeURIComponent(resi));
   const data = await res.json();
   if (!res.ok) {
-    const p = document.createElement("p");
-    p.className = "err";
-    p.textContent = data.error;
-    hasil.append(p);
+    tampilkanError(data.error);
     return;
-  }
-  const ol = document.createElement("ol");
-  for (const langkah of data.riwayat.slice().reverse()) {
-    const li = document.createElement("li");
-    li.textContent = langkah.status;
-    const small = document.createElement("small");
-    small.textContent = [langkah.lokasi, new Date(langkah.waktu).toLocaleString("id-ID")].filter(Boolean).join(" · ");
-    li.append(small);
-    ol.append(li);
   }
   if (!data.riwayat.length) {
-    const p = document.createElement("p");
-    p.textContent = "Belum ada riwayat untuk " + data.resi + ".";
-    hasil.append(p);
+    hasil.append(el("p", "text-sm text-base-content/70", "Belum ada riwayat untuk " + data.resi + "."));
     return;
   }
-  hasil.append(ol);
+  const daftar = data.riwayat.slice().reverse();
+  const ul = el("ul", "timeline timeline-vertical timeline-compact");
+  daftar.forEach((langkah, i) => {
+    const li = el("li");
+    const tengah = el("div", "timeline-middle");
+    tengah.append(el("span", "status status-primary"));
+    const akhir = el("div", "timeline-end mb-6");
+    akhir.append(el("div", "font-medium", langkah.status));
+    const meta = [langkah.lokasi, new Date(langkah.waktu).toLocaleString("id-ID")].filter(Boolean).join(" · ");
+    akhir.append(el("div", "text-xs text-base-content/70", meta));
+    li.append(tengah, akhir);
+    if (i < daftar.length - 1) li.append(el("hr", "bg-base-300"));
+    ul.append(li);
+  });
+  hasil.append(ul);
 });
 </script></body></html>`
