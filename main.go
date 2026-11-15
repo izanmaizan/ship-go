@@ -152,7 +152,7 @@ const indexHTML = `<!doctype html>
 </div>
 <div class="collapse collapse-arrow border border-base-300 bg-base-100 mt-2">
 <input type="radio" name="faq">
-<div class="collapse-title font-medium">Nomor resi tidak ditemukan.</div>
+<div class="collapse-title font-medium">Kenapa nomor resi tidak ditemukan?</div>
 <div class="collapse-content text-sm text-base-content/70"><p>Periksa penulisan. Huruf dan angka harus sama persis, termasuk huruf besar.</p></div>
 </div>
 </section>
