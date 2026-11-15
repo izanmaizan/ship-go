@@ -123,13 +123,43 @@ const indexHTML = `<!doctype html>
 <title>Ship - Lacak Paket</title>
 <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-</head><body class="min-h-screen bg-base-200 flex justify-center p-6">
-<main class="card bg-base-100 shadow w-full max-w-lg mt-12"><div class="card-body">
-<h1 class="card-title text-2xl">Ship</h1>
-<p class="text-sm text-base-content/70">Lacak paket dengan nomor resi.</p>
-<form id="lacak" class="join w-full mt-4"><input id="resi" class="input join-item w-full" placeholder="Nomor resi" aria-label="Nomor resi" maxlength="50" required><button class="btn btn-primary join-item">Lacak</button></form>
-<div id="hasil" class="mt-6"></div>
-</div></main>
+</head><body class="min-h-screen flex flex-col bg-base-100">
+<header class="navbar border-b border-base-200 px-4 sm:px-8">
+<div class="flex-1"><a href="/" class="text-lg font-semibold">Ship</a></div>
+<nav class="flex-none"><a href="#bantuan" class="btn btn-ghost btn-sm">Bantuan</a></nav>
+</header>
+<main class="flex-1 w-full max-w-2xl mx-auto px-4 py-10 sm:py-16">
+<section>
+<h1 class="text-3xl font-semibold">Lacak paket</h1>
+<p class="text-base-content/70 mt-2">Masukkan nomor resi untuk melihat riwayat pengiriman.</p>
+<form id="lacak" class="flex flex-col sm:flex-row gap-2 mt-6">
+<input id="resi" class="input input-bordered w-full" placeholder="Contoh: SHP1234" aria-label="Nomor resi" maxlength="50" required>
+<button class="btn btn-primary sm:w-32">Lacak</button>
+</form>
+</section>
+<section id="hasil" class="mt-8" aria-live="polite"></section>
+<section id="bantuan" class="mt-16">
+<h2 class="text-lg font-semibold mb-2">Pertanyaan umum</h2>
+<div class="collapse collapse-arrow border border-base-300 bg-base-100">
+<input type="radio" name="faq" checked>
+<div class="collapse-title font-medium">Apa itu nomor resi?</div>
+<div class="collapse-content text-sm text-base-content/70"><p>Nomor unik dari pengirim untuk setiap paket. Tulis persis seperti di label atau bukti kirim.</p></div>
+</div>
+<div class="collapse collapse-arrow border border-base-300 bg-base-100 mt-2">
+<input type="radio" name="faq">
+<div class="collapse-title font-medium">Kenapa riwayat kosong?</div>
+<div class="collapse-content text-sm text-base-content/70"><p>Paket baru terdaftar dan belum dipindai di titik mana pun. Cek lagi beberapa saat.</p></div>
+</div>
+<div class="collapse collapse-arrow border border-base-300 bg-base-100 mt-2">
+<input type="radio" name="faq">
+<div class="collapse-title font-medium">Nomor resi tidak ditemukan.</div>
+<div class="collapse-content text-sm text-base-content/70"><p>Periksa penulisan. Huruf dan angka harus sama persis, termasuk huruf besar.</p></div>
+</div>
+</section>
+</main>
+<footer class="footer footer-center p-6 text-sm text-base-content/60 border-t border-base-200">
+<p>Ship, layanan pelacakan paket</p>
+</footer>
 <script>
 const hasil = document.getElementById("hasil");
 function el(tag, cls, teks) {
@@ -139,38 +169,57 @@ function el(tag, cls, teks) {
   return node;
 }
 function tampilkanError(pesan) {
-  const box = el("div", "alert alert-error alert-soft", pesan);
+  const box = el("div", "alert alert-error", pesan);
   box.setAttribute("role", "alert");
-  hasil.append(box);
+  hasil.replaceChildren(box);
 }
-document.getElementById("lacak").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  hasil.replaceChildren();
-  const resi = document.getElementById("resi").value.trim();
-  const res = await fetch("/api/paket/" + encodeURIComponent(resi));
-  const data = await res.json();
-  if (!res.ok) {
-    tampilkanError(data.error);
-    return;
-  }
+function tampilkanRiwayat(data) {
+  const kepala = el("div", "flex items-start justify-between gap-4 mb-4");
+  const judul = el("div");
+  judul.append(el("p", "text-sm text-base-content/60", "Nomor resi"), el("p", "font-semibold font-mono", data.resi));
+  const tujuan = el("div", "text-right");
+  tujuan.append(el("p", "text-sm text-base-content/60", "Tujuan"), el("p", "font-semibold", data.tujuan));
+  kepala.append(judul, tujuan);
+  const wadah = el("div", "card border border-base-300 bg-base-100");
+  const isi = el("div", "card-body p-5");
+  isi.append(kepala);
   if (!data.riwayat.length) {
-    hasil.append(el("p", "text-sm text-base-content/70", "Belum ada riwayat untuk " + data.resi + "."));
+    isi.append(el("p", "text-base-content/70", "Belum ada riwayat pengiriman."));
+    wadah.append(isi);
+    hasil.replaceChildren(wadah);
     return;
   }
   const daftar = data.riwayat.slice().reverse();
   const ul = el("ul", "timeline timeline-vertical timeline-compact");
   daftar.forEach((langkah, i) => {
     const li = el("li");
+    const waktu = el("div", "timeline-start text-xs text-base-content/60 text-right pe-3 self-center", new Date(langkah.waktu).toLocaleString("id-ID"));
     const tengah = el("div", "timeline-middle");
-    tengah.append(el("span", "status status-primary"));
-    const akhir = el("div", "timeline-end mb-6");
-    akhir.append(el("div", "font-medium", langkah.status));
-    const meta = [langkah.lokasi, new Date(langkah.waktu).toLocaleString("id-ID")].filter(Boolean).join(" · ");
-    akhir.append(el("div", "text-xs text-base-content/70", meta));
-    li.append(tengah, akhir);
-    if (i < daftar.length - 1) li.append(el("hr", "bg-base-300"));
+    tengah.append(el("span", i === 0 ? "status status-primary" : "status"));
+    const akhir = el("div", "timeline-end pb-6");
+    const baris = el("div", "flex items-center gap-2");
+    baris.append(el("span", "font-medium", langkah.status));
+    if (i === 0) baris.append(el("span", "badge badge-primary badge-sm", "Terbaru"));
+    akhir.append(baris);
+    if (langkah.lokasi) akhir.append(el("p", "text-sm text-base-content/70", langkah.lokasi));
+    li.append(waktu, tengah, akhir);
+    if (i < daftar.length - 1) li.append(el("hr"));
     ul.append(li);
   });
-  hasil.append(ul);
+  isi.append(ul);
+  wadah.append(isi);
+  hasil.replaceChildren(wadah);
+}
+document.getElementById("lacak").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const resi = document.getElementById("resi").value.trim();
+  hasil.replaceChildren(el("p", "text-base-content/70", "Mencari..."));
+  const res = await fetch("/api/paket/" + encodeURIComponent(resi));
+  const data = await res.json();
+  if (!res.ok) {
+    tampilkanError(data.error);
+    return;
+  }
+  tampilkanRiwayat(data);
 });
 </script></body></html>`
