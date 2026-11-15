@@ -1,0 +1,5 @@
+AGENTS.md
+ship
+*.log
+.DS_Store
+.env
